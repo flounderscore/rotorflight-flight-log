@@ -1,5 +1,7 @@
-local models = require("models")
-local asserts = require("tests.asserts")
+local models = assert(loadfile("../scripts/rfflightlog/lib/models.lua"))()
+local asserts = assert(loadfile("asserts.lua"))()
+
+print(asserts) -- Ensure asserts module is loaded correctly.
 
 local now = os.time()
 local segmentDuration = 20
@@ -7,66 +9,66 @@ local waitDuration = 5
 
 -- Check initialization of `Flight` with default values.
 local flight = models.Flight.new(42, 12, 2)
-asserts.assert_eq(flight.flightIndex, 42)
-asserts.assert_eq(flight.modelId, 12)
-asserts.assert_eq(flight.batteryId, 2)
-asserts.assert_le(flight.flightStartTime, 0)
-asserts.assert_le(flight.flightSegmentStartTime, 0)
-asserts.assert_eq(flight.flightDurationSeconds, 0)
-asserts.assert_eq(flight.capacityUsedMah, 0)
-asserts.assert_false(flight.isCompleted)
+asserts.assertEq(flight.flightIndex, 42)
+asserts.assertEq(flight.modelId, 12)
+asserts.assertEq(flight.batteryId, 2)
+asserts.assertEq(flight.flightStartTime, nil)
+asserts.assertEq(flight.flightSegmentStartTime, nil)
+asserts.assertEq(flight.flightDurationSeconds, 0)
+asserts.assertEq(flight.capacityUsedMah, 0)
+asserts.assertFalse(flight.isCompleted)
 
 -- Start a flight (which would happen by arming, for example).
 flight:startFlight(now)
-asserts.assert_eq(flight.flightStartTime, now)
-asserts.assert_le(flight.flightSegmentStartTime, 0)
-asserts.assert_false(flight.isCompleted)
+asserts.assertEq(flight.flightStartTime, now)
+asserts.assertNe(flight.flightSegmentStartTime, nil)
+asserts.assertFalse(flight.isCompleted)
 
 -- Start the first segment (which would happen when the throttle exceeds zero).
 now = now + waitDuration
 flight:startSegment(now)
-asserts.assert_eq(flight.flightSegmentStartTime, now)
-asserts.assert_le(flight.flightStartTime, now)
-asserts.assert_eq(flight.flightDurationSeconds, 0) -- First segment, accumulated duration still zero.
-asserts.assert_false(flight.isCompleted)
+asserts.assertEq(flight.flightSegmentStartTime, now)
+asserts.assertLe(flight.flightStartTime, now)
+asserts.assertEq(flight.flightDurationSeconds, 0) -- First segment, accumulated duration still zero.
+asserts.assertFalse(flight.isCompleted)
 
-asserts.assert_error(function() flight:startSegment(now) end) -- Cannot start another segment before finishing.
+asserts.assertError(function() flight:startSegment(now) end) -- Cannot start another segment before finishing.
 
 -- Finish the first segment (which would happen on disarm, throttle, or governor state).
 now = now + segmentDuration
 flight:finishSegment(now)
-asserts.assert_eq(flight.flightDurationSeconds, segmentDuration)
-asserts.assert_le(flight.flightSegmentStartTime, 0)
-asserts.assert_false(flight.isCompleted)
+asserts.assertEq(flight.flightDurationSeconds, segmentDuration)
+asserts.assertLe(flight.flightSegmentStartTime, 0)
+asserts.assertFalse(flight.isCompleted)
 
-asserts.assert_error(function() flight:finishSegment(now) end) -- Cannot finish another segment before starting.
+asserts.assertError(function() flight:finishSegment(now) end) -- Cannot finish another segment before starting.
 
 -- Start the second segment.
 now = now + waitDuration
 flight:startSegment(now)
-asserts.assert_eq(flight.flightSegmentStartTime, now)
-asserts.assert_le(flight.flightStartTime, now)
-asserts.assert_ge(flight.flightDurationSeconds, 0) -- Duration already contains the duration of the first segment.
-asserts.assert_false(flight.isCompleted)
+asserts.assertEq(flight.flightSegmentStartTime, now)
+asserts.assertLe(flight.flightStartTime, now)
+asserts.assertGe(flight.flightDurationSeconds, 0) -- Duration already contains the duration of the first segment.
+asserts.assertFalse(flight.isCompleted)
 
 -- Finish the second segment.
 now = now + segmentDuration
 flight:finishSegment(now)
-asserts.assert_eq(flight.flightDurationSeconds, segmentDuration * 2)
-asserts.assert_le(flight.flightSegmentStartTime, 0)
-asserts.assert_false(flight.isCompleted)
+asserts.assertEq(flight.flightDurationSeconds, segmentDuration * 2)
+asserts.assertLe(flight.flightSegmentStartTime, 0)
+asserts.assertFalse(flight.isCompleted)
 
-asserts.assert_error(function() flight:toTable() end) -- Cannot convert to table before finishing.
+asserts.assertError(function() flight:toTable() end) -- Cannot convert to table before finishing.
 
 -- Finish the flight (which happens when telemetry is dropped for more than some amount of time or if re-arming is attempted and the used capacity reported by telemetry is decreased).
 now = now + waitDuration
 flight:finishFlight(1234, now)
-asserts.assert_eq(flight.flightDurationSeconds, segmentDuration * 2)
-asserts.assert_le(flight.flightSegmentStartTime, 0)
-asserts.assert_le(flight.flightStartTime, now)
-asserts.assert_eq(flight.capacityUsedMah, 1234)
-asserts.assert_true(flight.isCompleted)
+asserts.assertEq(flight.flightDurationSeconds, segmentDuration * 2)
+asserts.assertLe(flight.flightSegmentStartTime, 0)
+asserts.assertLe(flight.flightStartTime, now)
+asserts.assertEq(flight.capacityUsedMah, 1234)
+asserts.assertTrue(flight.isCompleted)
 
-asserts.assert_error(function() flight:finishSegment(now) end) -- Cannot finish another segment after finishing.
+asserts.assertError(function() flight:finishSegment(now) end) -- Cannot finish another segment after finishing.
 
-asserts.assert_ne(tostring(flight), "") -- Smoke test.
+asserts.assertNe(tostring(flight), "") -- Smoke test.

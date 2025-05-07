@@ -1,5 +1,6 @@
-local models = require("models")
-local flights = require("flights")
+local models = assert(loadfile("lib/models.lua"))()
+
+local flights = assert(loadfile("lib/flights.lua"))()
 
 local fs = flights.Flights.new(
     os.tmpname() .. "_flights.csv",

@@ -128,7 +128,7 @@ function Flight:startFlight(now)
         error("Cannot start flight. Flight is already completed.")
     end
 
-    if self.flightStartTime > 0 then
+    if self.flightStartTime ~= nil then
         error("Cannot start flight. Flight has already been started.")
     end
 
@@ -145,7 +145,7 @@ function Flight:finishFlight(capacityUsedMah, now)
         error("Cannot finish flight. Flight is already completed.")
     end
 
-    if self.flightSegmentStartTime > 0 then
+    if self.flightSegmentStartTime ~= nil then
         self:finishSegment(now)
     end
 

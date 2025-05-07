@@ -1,6 +1,6 @@
-local csv = require("csv")
+local csv = assert(loadfile("lib/csv.lua"))()
 
-local models = require("models")
+local models = assert(loadfile("lib/models.lua"))()
 
 local defaultFilenameFlights = "flights.csv"
 
